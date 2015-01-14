@@ -20,6 +20,7 @@
 #include <SFML/Graphics.hpp>
 #include "SFML/OpenGL.hpp" 
 #include <iostream>
+#include <vector>
 
 #define _USE_MATH_DEFINES
 #include "math.h"
@@ -29,6 +30,9 @@ const double DR = M_PI / 180;
 
 using std::cout;
 using std::endl;
+
+using std::vector;
+using std::string;
 ////////////////////////////////////////////////////////////
 ///Global Variables
 //////////////////////////////////////////////////////////// 
@@ -41,6 +45,60 @@ const sf::Keyboard keyboard;
 ///Functions
 //////////////////////////////////////////////////////////// 
 
+void LoadImages(const vector<sf::Texture> & textures, const vector<string> filenames)
+{
+
+}
+
+void CheckInput()
+{
+	if (keyboard.isKeyPressed(keyboard.Up))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.Down))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.Left))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.Right))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.W))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.A))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.S))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.D))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.Q))
+	{
+
+	}
+	if (keyboard.isKeyPressed(keyboard.E))
+	{
+
+	}
+
+	if (keyboard.isKeyPressed(keyboard.R))
+	{
+
+	}
+}
+
 ////////////////////////////////////////////////////////////
 ///Entrypoint of application 
 //////////////////////////////////////////////////////////// 
@@ -49,22 +107,13 @@ int main()
 	// Create the main window 
 	sf::RenderWindow window(sf::VideoMode(800, 800, 32), "SFML OpenGL 3D");
 	window.setFramerateLimit(60);
+	vector<sf::Texture> tex;
+	vector<string> filenames;
 
-	//load a font
-	sf::Font font;
-	font.loadFromFile("Assets\\FORCED SQUARE.ttf");
-
-	//create a formatted text string
-	sf::Text text;
-	text.setFont(font);
-	text.setString("Hello World");
-	text.setStyle(sf::Text::Underlined | sf::Text::Italic | sf::Text::Bold);
-	text.setPosition(20, 40);
-	text.setCharacterSize(sin(M_PI) * 100);
-
-	sf::Texture tex;
-	std::string image = "Assets\\car.jpg";
-	if (!tex.loadFromFile(image))
+	sf::Texture pr;
+	
+	string image = "Assets\\pr.png";
+	if (!pr.loadFromFile(image))
 	{
 		std::cout << "Could not load" << image;
 		char c;
@@ -72,7 +121,7 @@ int main()
 		return false;
 	}
 
-	sf::Texture::bind(&tex);
+	sf::Texture::bind(&pr);
 	glEnable(GL_TEXTURE_2D);
 
 	GLdouble aaa[] = { 1, 1, 1 };
@@ -106,7 +155,8 @@ int main()
 		//Input
 		CheckInput();
 
-		//r += 0.5;
+		r += 0.5;
+
 		//prepare frame
 		window.clear();
 		glMatrixMode(GL_MODELVIEW);
@@ -178,53 +228,4 @@ int main()
 	} //loop back for next frame
 
 	return EXIT_SUCCESS;
-}
-
-void CheckInput()
-{
-	if (keyboard.isKeyPressed(keyboard.Up))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.Down))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.Left))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.Right))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.W))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.A))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.S))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.D))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.Q))
-	{
-
-	}
-	if (keyboard.isKeyPressed(keyboard.E))
-	{
-
-	}
-
-	if (keyboard.isKeyPressed(keyboard.R))
-	{
-
-	}
 }
