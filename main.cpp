@@ -45,9 +45,44 @@ const sf::Keyboard keyboard;
 ///Functions
 //////////////////////////////////////////////////////////// 
 
-void LoadImages(const vector<sf::Texture> & textures, const vector<string> filenames)
+vector<sf::Texture> LoadImages(const vector<string> & filenames)
 {
+	vector<sf::Texture> textures;
+	textures.reserve(filenames.size());
+	sf::Texture temp;
 
+	for (vector<string>::const_iterator vIter = filenames.begin(), vEnd = filenames.end(); vIter < vEnd; ++vIter)
+	{
+		if (!temp.loadFromFile(*vIter))
+		{
+			std::cout << "Could not load" << *vIter;
+			textures.push_back(temp);
+			continue;
+		}
+
+		textures.push_back(temp);
+		
+	}
+
+	return textures;
+}
+
+vector<string> LoadFilenames()
+{
+	vector<string> filenames;
+	filenames.reserve(9);
+
+	filenames.push_back("Assets/p0.png");
+	filenames.push_back("Assets/pr.png");
+	filenames.push_back("Assets/pg.png");
+	filenames.push_back("Assets/pb.png");
+	filenames.push_back("Assets/pc.png");
+	filenames.push_back("Assets/pm.png");
+	filenames.push_back("Assets/py.png");
+	filenames.push_back("Assets/p0.png");
+	filenames.push_back("Assets/car.jpg");
+
+	return filenames;
 }
 
 void CheckInput()
@@ -107,22 +142,9 @@ int main()
 	// Create the main window 
 	sf::RenderWindow window(sf::VideoMode(800, 800, 32), "SFML OpenGL 3D");
 	window.setFramerateLimit(60);
-	vector<sf::Texture> tex;
-	vector<string> filenames;
 
-	sf::Texture pr;
-	
-	string image = "Assets\\pr.png";
-	if (!pr.loadFromFile(image))
-	{
-		std::cout << "Could not load" << image;
-		char c;
-		std::cin >> c;
-		return false;
-	}
-
-	sf::Texture::bind(&pr);
 	glEnable(GL_TEXTURE_2D);
+	vector<sf::Texture> tex = LoadImages(LoadFilenames());
 
 	GLdouble aaa[] = { 1, 1, 1 };
 	GLdouble aab[] = { 1, 1, -1 };
@@ -134,7 +156,13 @@ int main()
 	GLdouble bbb[] = { -1, -1, -1 };
 
 
+	//Enable Back Face Culling
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glClearDepth(1.0f);
+
 	double r = 0;
+
 	// Start game loop 
 	while (window.isOpen())
 	{
@@ -155,17 +183,22 @@ int main()
 		//Input
 		CheckInput();
 
-		r += 0.5;
-
-		//prepare frame
+		//Draw Begin
 		window.clear();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		//Matrices
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
-		glRotated(r, 1, 0, 0);
+		r += 0.5;
+		glRotated(r / 2, 1, 0, 0);
 		glRotated(r, 0, 1, 0);
 		glScaled(0.5, 0.5, 0.5);
 
+		//Texture
+		//Front aaa baa bba aba
+		sf::Texture::bind(&tex.at(1));
 		glBegin(GL_QUADS);
 		glTexCoord2d(0, 0);
 		glVertex3dv(aaa);
@@ -178,9 +211,90 @@ int main()
 
 		glTexCoord2d(0, 1);
 		glVertex3dv(aba);
-
 		glEnd();
 
+		
+		//Top aaa baa bab aab
+		sf::Texture::bind(&tex.at(2));
+		glBegin(GL_QUADS);
+		glTexCoord2d(0, 0);
+		glVertex3dv(aaa);
+
+		glTexCoord2d(1, 0);
+		glVertex3dv(baa);
+
+		glTexCoord2d(1, 1);
+		glVertex3dv(bab);
+
+		glTexCoord2d(0, 1);
+		glVertex3dv(aab);
+		glEnd();
+		
+		//Right aaa aba abb aab
+		sf::Texture::bind(&tex.at(3));
+		glBegin(GL_QUADS);
+		glTexCoord2d(0, 0);
+		glVertex3dv(aaa);
+
+		glTexCoord2d(1, 0);
+		glVertex3dv(aba);
+
+		glTexCoord2d(1, 1);
+		glVertex3dv(abb);
+
+		glTexCoord2d(0, 1);
+		glVertex3dv(aab);
+		glEnd();
+
+		//Left bbb bba baa bab
+		sf::Texture::bind(&tex.at(4));
+		glBegin(GL_QUADS);
+		glTexCoord2d(0, 0);
+		glVertex3dv(bbb);
+
+		glTexCoord2d(1, 0);
+		glVertex3dv(bba);
+
+		glTexCoord2d(1, 1);
+		glVertex3dv(baa);
+
+		glTexCoord2d(0, 1);
+		glVertex3dv(bab);
+		glEnd();
+		
+		//Bottom bbb abb aba bba
+		sf::Texture::bind(&tex.at(5));
+		glBegin(GL_QUADS);
+		glTexCoord2d(0, 0);
+		glVertex3dv(bbb);
+
+		glTexCoord2d(1, 0);
+		glVertex3dv(abb);
+
+		glTexCoord2d(1, 1);
+		glVertex3dv(aba);
+
+		glTexCoord2d(0, 1);
+		glVertex3dv(bba);
+		glEnd();
+		
+		//Back bbb abb aab bab
+		sf::Texture::bind(&tex.at(6));
+		glBegin(GL_QUADS);
+		glTexCoord2d(0, 0);
+		glVertex3dv(bbb);
+
+		glTexCoord2d(1, 0);
+		glVertex3dv(abb);
+
+		glTexCoord2d(1, 1);
+		glVertex3dv(aab);
+
+		glTexCoord2d(0, 1);
+		glVertex3dv(bab);
+		glEnd();
+		
+		//Lines
 		glBegin(GL_LINES);
 		//top
 		glVertex3dv(aaa);
@@ -195,7 +309,7 @@ int main()
 		glVertex3dv(aba);
 		glVertex3dv(aaa);
 
-		//bottom
+		//Lines bottom
 		glVertex3dv(baa);
 		glVertex3dv(bab);
 
@@ -208,7 +322,7 @@ int main()
 		glVertex3dv(bba);
 		glVertex3dv(baa);
 
-		//sides
+		//Lines sides
 		glVertex3dv(aaa);
 		glVertex3dv(baa);
 
@@ -225,7 +339,7 @@ int main()
 
 		// Finally, display rendered frame on screen 
 		window.display();
-	} //loop back for next frame
+	}
 
 	return EXIT_SUCCESS;
 }
