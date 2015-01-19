@@ -70,7 +70,7 @@ vector<sf::Texture> LoadImages(const vector<string> & filenames)
 vector<string> LoadFilenames()
 {
 	vector<string> filenames;
-	filenames.reserve(9);
+	filenames.reserve(10);
 
 	filenames.push_back("Assets/p0.png");
 	filenames.push_back("Assets/pr.png");
@@ -79,10 +79,148 @@ vector<string> LoadFilenames()
 	filenames.push_back("Assets/pc.png");
 	filenames.push_back("Assets/pm.png");
 	filenames.push_back("Assets/py.png");
-	filenames.push_back("Assets/p0.png");
+	filenames.push_back("Assets/p1.png");
+
 	filenames.push_back("Assets/car.jpg");
 
+	filenames.push_back("Assets/die.png");
+
+	filenames.push_back("Assets/cant.png");
+	filenames.push_back("Assets/cans.png");
+	filenames.push_back("Assets/canb.png");
+
 	return filenames;
+}
+
+vector<sf::Vector3f> GetCylinder(float radius, float vertices, float height)
+{
+	vector<sf::Vector3f> cyl;
+	GLdouble* temp[3];
+
+	float half = height / 2.0;
+
+	//First point, center of top
+	cyl.push_back({0, half, 0});
+
+	//Top rim, bottom rim
+	for (int i = 1; i >= -1; i -= 2)
+	{
+		for (int j = 0; j <= vertices - 1; ++j)
+		{
+			float posX = radius * (cos(DR * 360 / vertices * j));
+			float posZ = radius * (sin(DR * 360 / vertices * j));
+			cyl.push_back({ posX, half * i, posZ });
+		}
+	}
+
+	//Last point, center of last
+	cyl.push_back({ 0, -half, 0 });
+
+	return cyl;
+}
+
+void GL(sf::Vector3f in)
+{
+	glVertex3d(in.x, in.y, in.z);
+}
+
+void GLT(int x)
+{
+	static int count = 0;
+	
+	if (count % 3 == 0)
+	{
+		cout << endl;
+	}
+
+	cout << x << " ";
+
+	count++;
+}
+
+void GLQ(int x)
+{
+	static int counq = 0;
+
+	if (counq % 4 == 0)
+	{
+		cout << endl;
+	}
+
+	cout << x << " ";
+
+	counq++;
+}
+
+
+void Test()
+{
+	vector<int> vint;
+	for (int i = 0; i < 10; i++)
+	{
+		vint.push_back(i);
+	}
+
+
+	int magic = (vint.size() - 2) / 2;
+
+	cout << "Top:" << endl;
+	for (vector<int>::iterator vStart = vint.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1;	vIter != vEnd; ++vIter)
+	{
+		if (vIter != vLast)
+		{
+			GLT(*vStart);
+			GLT(*vIter);
+			GLT(*++vIter);
+			--vIter;
+		}
+
+		else
+		{
+			GLT(*vStart);
+			GLT(*vIter);
+			GLT(*++vStart);
+		}
+	}
+
+	cout << endl << "---" << endl << "Rim";
+	for (vector<int>::iterator vStart = vint.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
+	{
+		if (vIter != vLast)
+		{
+			GLQ(*vIter);
+			GLQ(*vIter + magic);
+			GLQ(*vIter + magic + 1);
+			GLQ(*vIter + 1);
+		}
+
+		else
+		{
+			GLQ(*vIter);
+			GLQ(*vIter + magic);
+			GLQ(*vIter + 1);
+			GLQ(*vStart + 1);
+		}
+
+	}
+
+	cout << endl << "---" << endl << "Bottom";
+	for (vector<int>::iterator vStart = vint.begin() + magic, vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
+	{
+		if (vIter != vLast)
+		{
+			GLT(*vEnd);
+			GLT(*++vIter);
+			GLT(*--vIter);
+		}
+
+		else
+		{
+			GLT(*vEnd);
+			GLT(*vIter);
+			GLT(*++vStart);
+		}
+	}
 }
 
 void CheckInput()
@@ -143,9 +281,13 @@ int main()
 	sf::RenderWindow window(sf::VideoMode(800, 800, 32), "SFML OpenGL 3D");
 	window.setFramerateLimit(60);
 
+	enum prim{ cube, dice, cyl, can };
+	prim mode = cyl;
+
 	glEnable(GL_TEXTURE_2D);
 	vector<sf::Texture> tex = LoadImages(LoadFilenames());
 
+	//Cube coords
 	GLdouble aaa[] = { 1, 1, 1 };
 	GLdouble aab[] = { 1, 1, -1 };
 	GLdouble abb[] = { 1, -1, -1 };
@@ -154,7 +296,13 @@ int main()
 	GLdouble bab[] = { -1, 1, -1 };
 	GLdouble bba[] = { -1, -1, 1 };
 	GLdouble bbb[] = { -1, -1, -1 };
-
+	
+	//Cylinder vars
+	float cylrad = 0.5f,
+		cylhei = 1.0,
+		cylver = 16,
+		magic = 0;
+	vector<sf::Vector3f> cylPoi = GetCylinder(cylrad, cylver, cylhei);
 
 	//Enable Back Face Culling
 	glEnable(GL_DEPTH_TEST);
@@ -162,6 +310,8 @@ int main()
 	glClearDepth(1.0f);
 
 	double r = 0;
+
+	Test();
 
 	// Start game loop 
 	while (window.isOpen())
@@ -185,157 +335,451 @@ int main()
 
 		//Draw Begin
 		window.clear();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//Matrices
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+		float x, y;
 
-		r += 0.5;
-		glRotated(r / 2, 1, 0, 0);
-		glRotated(r, 0, 1, 0);
-		glScaled(0.5, 0.5, 0.5);
+		switch (mode)
+		{
+		case cube:
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//Texture
-		//Front aaa baa bba aba
-		sf::Texture::bind(&tex.at(1));
-		glBegin(GL_QUADS);
-		glTexCoord2d(0, 0);
-		glVertex3dv(aaa);
+			//Matrices
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
 
-		glTexCoord2d(1, 0);
-		glVertex3dv(baa);
+			r += 0.5;
+			glRotated(r / 2, 1, 0, 0);
+			glRotated(r, 0, 1, 0);
+			glScaled(0.5, 0.5, 0.5);
 
-		glTexCoord2d(1, 1);
-		glVertex3dv(bba);
+			//Texture
+			//Front aaa baa bba aba r
+			glColor3f(1, 0, 0);
+			glBegin(GL_QUADS);
+			glVertex3dv(aaa);
+			glVertex3dv(baa);
+			glVertex3dv(bba);
+			glVertex3dv(aba);
+			glEnd();
 
-		glTexCoord2d(0, 1);
-		glVertex3dv(aba);
-		glEnd();
 
-		
-		//Top aaa baa bab aab
-		sf::Texture::bind(&tex.at(2));
-		glBegin(GL_QUADS);
-		glTexCoord2d(0, 0);
-		glVertex3dv(aaa);
+			//Top aaa baa bab aab g
+			glColor3f(0, 1, 0);
+			glBegin(GL_QUADS);
+			glVertex3dv(aaa);
+			glVertex3dv(baa);
+			glVertex3dv(bab);
+			glVertex3dv(aab);
+			glEnd();
 
-		glTexCoord2d(1, 0);
-		glVertex3dv(baa);
+			//Right aaa aba abb aab b
+			glColor3f(0, 0, 1);
+			glBegin(GL_QUADS);
+			glVertex3dv(aaa);
+			glVertex3dv(aba);
+			glVertex3dv(abb);
+			glVertex3dv(aab);
+			glEnd();
 
-		glTexCoord2d(1, 1);
-		glVertex3dv(bab);
+			//Left bbb bba baa bab c
+			glColor3f(0, 1, 1);
+			glBegin(GL_QUADS);
+			glVertex3dv(bbb);
+			glVertex3dv(bba);
+			glVertex3dv(baa);
+			glVertex3dv(bab);
+			glEnd();
 
-		glTexCoord2d(0, 1);
-		glVertex3dv(aab);
-		glEnd();
-		
-		//Right aaa aba abb aab
-		sf::Texture::bind(&tex.at(3));
-		glBegin(GL_QUADS);
-		glTexCoord2d(0, 0);
-		glVertex3dv(aaa);
+			//Bottom bbb abb aba bba m
+			glColor3f(1, 0, 1);
+			glBegin(GL_QUADS);
+			glVertex3dv(bbb);
+			glVertex3dv(abb);
+			glVertex3dv(aba);
+			glVertex3dv(bba);
+			glEnd();
 
-		glTexCoord2d(1, 0);
-		glVertex3dv(aba);
+			//Back bbb abb aab bab y
+			glColor3f(0, 1, 1);
+			glBegin(GL_QUADS);
+			glVertex3dv(bbb);
+			glVertex3dv(abb);
+			glVertex3dv(aab);
+			glVertex3dv(bab);
+			glEnd();
 
-		glTexCoord2d(1, 1);
-		glVertex3dv(abb);
+			//Lines
+			glColor3f(1, 1, 1);	
+			glBegin(GL_LINES);
+			//top
+			glVertex3dv(aaa);
+			glVertex3dv(aab);
 
-		glTexCoord2d(0, 1);
-		glVertex3dv(aab);
-		glEnd();
+			glVertex3dv(aab);
+			glVertex3dv(abb);
 
-		//Left bbb bba baa bab
-		sf::Texture::bind(&tex.at(4));
-		glBegin(GL_QUADS);
-		glTexCoord2d(0, 0);
-		glVertex3dv(bbb);
+			glVertex3dv(abb);
+			glVertex3dv(aba);
 
-		glTexCoord2d(1, 0);
-		glVertex3dv(bba);
+			glVertex3dv(aba);
+			glVertex3dv(aaa);
 
-		glTexCoord2d(1, 1);
-		glVertex3dv(baa);
+			//Lines bottom
+			glVertex3dv(baa);
+			glVertex3dv(bab);
 
-		glTexCoord2d(0, 1);
-		glVertex3dv(bab);
-		glEnd();
-		
-		//Bottom bbb abb aba bba
-		sf::Texture::bind(&tex.at(5));
-		glBegin(GL_QUADS);
-		glTexCoord2d(0, 0);
-		glVertex3dv(bbb);
+			glVertex3dv(bab);
+			glVertex3dv(bbb);
 
-		glTexCoord2d(1, 0);
-		glVertex3dv(abb);
+			glVertex3dv(bbb);
+			glVertex3dv(bba);
 
-		glTexCoord2d(1, 1);
-		glVertex3dv(aba);
+			glVertex3dv(bba);
+			glVertex3dv(baa);
 
-		glTexCoord2d(0, 1);
-		glVertex3dv(bba);
-		glEnd();
-		
-		//Back bbb abb aab bab
-		sf::Texture::bind(&tex.at(6));
-		glBegin(GL_QUADS);
-		glTexCoord2d(0, 0);
-		glVertex3dv(bbb);
+			//Lines sides
+			glVertex3dv(aaa);
+			glVertex3dv(baa);
 
-		glTexCoord2d(1, 0);
-		glVertex3dv(abb);
+			glVertex3dv(aba);
+			glVertex3dv(bba);
 
-		glTexCoord2d(1, 1);
-		glVertex3dv(aab);
+			glVertex3dv(abb);
+			glVertex3dv(bbb);
 
-		glTexCoord2d(0, 1);
-		glVertex3dv(bab);
-		glEnd();
-		
-		//Lines
-		glBegin(GL_LINES);
-		//top
-		glVertex3dv(aaa);
-		glVertex3dv(aab);
+			glVertex3dv(aab);
+			glVertex3dv(bab);
 
-		glVertex3dv(aab);
-		glVertex3dv(abb);
+			glEnd();
+			break;
+		case dice:
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glVertex3dv(abb);
-		glVertex3dv(aba);
+			//Matrices
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
 
-		glVertex3dv(aba);
-		glVertex3dv(aaa);
+			r += 0.5;
+			glRotated(r / 2, 1, 0, 0);
+			glRotated(r, 0, 1, 0);
+			glScaled(0.5, 0.5, 0.5);
 
-		//Lines bottom
-		glVertex3dv(baa);
-		glVertex3dv(bab);
+			sf::Texture::bind(&tex.at(9));
+			x = 1.0 / 3.0;
+			y = 1.0 / 2.0;
 
-		glVertex3dv(bab);
-		glVertex3dv(bbb);
+			//Texture
+			//Front aaa baa bba aba 1
+			glBegin(GL_QUADS);
+			glTexCoord2d(1 * x, 0 * y);
+			glVertex3dv(aaa);
 
-		glVertex3dv(bbb);
-		glVertex3dv(bba);
+			glTexCoord2d(0 * x, 0 * y);
+			glVertex3dv(baa);
 
-		glVertex3dv(bba);
-		glVertex3dv(baa);
+			glTexCoord2d(0 * x, 1 * y);
+			glVertex3dv(bba);
 
-		//Lines sides
-		glVertex3dv(aaa);
-		glVertex3dv(baa);
+			glTexCoord2d(1 * x, 1 * y);
+			glVertex3dv(aba);
+			glEnd();
+			
+			//Top aaa baa bab aab 3
+			glBegin(GL_QUADS);
+			glTexCoord2d(2 * x, 1 * y);
+			glVertex3dv(aaa);
 
-		glVertex3dv(aba);
-		glVertex3dv(bba);
+			glTexCoord2d(2 * x, 0 * y);
+			glVertex3dv(baa);
 
-		glVertex3dv(abb);
-		glVertex3dv(bbb);
+			glTexCoord2d(3 * x, 0 * y);
+			glVertex3dv(bab);
 
-		glVertex3dv(aab);
-		glVertex3dv(bab);
+			glTexCoord2d(3 * x, 1 * y);
+			glVertex3dv(aab);
+			glEnd();
 
-		glEnd();
+			//Right aaa aba abb aab 2
+			glBegin(GL_QUADS);
+			glTexCoord2d(x * 1, y * 0);
+			glVertex3dv(aaa);
+
+			glTexCoord2d(x * 1, y * 1);
+			glVertex3dv(aba);
+
+			glTexCoord2d(x * 2, y * 1);
+			glVertex3dv(abb);
+
+			glTexCoord2d(x * 2, y * 0);
+			glVertex3dv(aab);
+			glEnd();
+
+			//Left bbb bba baa bab 5
+			glBegin(GL_QUADS);
+			glTexCoord2d(x * 1, y * 2);
+			glVertex3dv(bbb);
+
+			glTexCoord2d(x * 2, y * 2);
+			glVertex3dv(bba);
+
+			glTexCoord2d(x * 2, y * 1);
+			glVertex3dv(baa);
+
+			glTexCoord2d(x * 1, y * 1);
+			glVertex3dv(bab);
+			glEnd();
+
+			//Bottom bbb abb aba bba 4
+			glBegin(GL_QUADS);
+			glTexCoord2d(x * 1, y * 2);
+			glVertex3dv(bbb);
+
+			glTexCoord2d(x * 1, y * 1);
+			glVertex3dv(abb);
+
+			glTexCoord2d(x * 0, y * 1);
+			glVertex3dv(aba);
+
+			glTexCoord2d(x * 0, y * 2);
+			glVertex3dv(bba);
+			glEnd();
+
+			//Back bbb abb aab bab 6
+			glBegin(GL_QUADS);
+			glTexCoord2d(x * 3, y * 2);
+			glVertex3dv(bbb);
+
+			glTexCoord2d(x * 2, y * 2);
+			glVertex3dv(abb);
+
+			glTexCoord2d(x * 2, y * 1);
+			glVertex3dv(aab);
+
+			glTexCoord2d(x * 3, y * 1);
+			glVertex3dv(bab);
+			glEnd();
+
+			//Lines
+			glBegin(GL_LINES);
+			glColor3f(1, 1, 1);
+			//top
+			glVertex3dv(aaa);
+			glVertex3dv(aab);
+
+			glVertex3dv(aab);
+			glVertex3dv(abb);
+
+			glVertex3dv(abb);
+			glVertex3dv(aba);
+
+			glVertex3dv(aba);
+			glVertex3dv(aaa);
+
+			//Lines bottom
+			glVertex3dv(baa);
+			glVertex3dv(bab);
+
+			glVertex3dv(bab);
+			glVertex3dv(bbb);
+
+			glVertex3dv(bbb);
+			glVertex3dv(bba);
+
+			glVertex3dv(bba);
+			glVertex3dv(baa);
+
+			//Lines sides
+			glVertex3dv(aaa);
+			glVertex3dv(baa);
+
+			glVertex3dv(aba);
+			glVertex3dv(bba);
+
+			glVertex3dv(abb);
+			glVertex3dv(bbb);
+
+			glVertex3dv(aab);
+			glVertex3dv(bab);
+
+			glEnd();
+			break;
+			case cyl:
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				//Matrices
+				glMatrixMode(GL_MODELVIEW);
+				glLoadIdentity();
+
+				glDisable(GL_CULL_FACE);
+
+				glPolygonMode(GL_BACK, GL_LINE);
+				glPolygonMode(GL_FRONT, GL_FILL);
+				r += 2;
+				glRotated(r / 2, 1, 0, 0);
+				glRotated(r, 0, 1, 0);
+				glScaled(0.5, 0.5, 0.5);
+
+				magic = (cylPoi.size() - 2) / 2;
+
+				//Top
+				glColor3f(0, 1, 0);
+				glBegin(GL_TRIANGLES);
+				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
+				{
+					if (vIter != vLast)
+					{
+						GL(*vStart);
+						GL(*vIter);
+						GL(*(vIter + 1));
+					}
+
+					else
+					{
+						GL(*vStart);
+						GL(*vIter);
+						GL(*++vStart);
+					}
+				}
+
+				glEnd();
+
+				//Rim
+				
+				glColor3f(0, 0, 1);
+				glBegin(GL_QUADS);
+				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
+				{
+					if (vIter != vLast)
+					{
+						GL(*vIter);
+						GL(*(vIter + magic));
+						GL(*(vIter + magic + 1));
+						GL(*(vIter + 1));
+					}
+
+					else
+					{
+						GL(*vIter);
+						GL(*(vIter + magic));
+						GL(*(vIter + 1));
+						GL(*(vStart + 1));
+					}
+
+				}
+				glEnd();
+				
+
+				//Bottom
+				glColor3f(1, 0, 0);
+				glBegin(GL_TRIANGLES);
+				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin() + magic, vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
+				{
+					if (vIter != vLast)
+					{
+						GL(*vEnd);
+						GL(*++vIter);
+						GL(*--vIter);
+					}
+					
+					else
+					{
+						GL(*vEnd);
+						GL(*++vStart);
+						GL(*vIter);
+					}
+				}
+				glEnd();
+
+				break;
+			case can:
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				//Matrices
+				glMatrixMode(GL_MODELVIEW);
+				glLoadIdentity();
+
+				glDisable(GL_CULL_FACE);
+
+				glPolygonMode(GL_BACK, GL_LINE);
+				glPolygonMode(GL_FRONT, GL_FILL);
+				r += 2;
+				glRotated(r / 2, 1, 0, 0);
+				glRotated(r, 0, 1, 0);
+				glScaled(0.5, 0.5, 0.5);
+
+				magic = (cylPoi.size() - 2) / 2;
+
+				//Top
+				glColor3f(0, 1, 0);
+				glBegin(GL_TRIANGLES);
+				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
+				{
+					if (vIter != vLast)
+					{
+						GL(*vStart);
+						GL(*vIter);
+						GL(*(vIter + 1));
+					}
+
+					else
+					{
+						GL(*vStart);
+						GL(*vIter);
+						GL(*++vStart);
+					}
+				}
+
+				glEnd();
+
+				//Rim
+
+				glColor3f(0, 0, 1);
+				glBegin(GL_QUADS);
+				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
+				{
+					if (vIter != vLast)
+					{
+						GL(*vIter);
+						GL(*(vIter + magic));
+						GL(*(vIter + magic + 1));
+						GL(*(vIter + 1));
+					}
+
+					else
+					{
+						GL(*vIter);
+						GL(*(vIter + magic));
+						GL(*(vIter + 1));
+						GL(*(vStart + 1));
+					}
+
+				}
+				glEnd();
+
+
+				//Bottom
+				glColor3f(1, 0, 0);
+				glBegin(GL_TRIANGLES);
+				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin() + magic, vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
+				{
+					if (vIter != vLast)
+					{
+						GL(*vEnd);
+						GL(*++vIter);
+						GL(*--vIter);
+					}
+
+					else
+					{
+						GL(*vEnd);
+						GL(*++vStart);
+						GL(*vIter);
+					}
+				}
+				glEnd();
+
+				break;
+		}
 
 		// Finally, display rendered frame on screen 
 		window.display();
