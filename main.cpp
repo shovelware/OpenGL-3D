@@ -124,6 +124,19 @@ void GL(sf::Vector3f in)
 	glVertex3d(in.x, in.y, in.z);
 }
 
+void GLTex(float div, float mult)
+{
+	if (div == 0)
+	{
+		glTexCoord2d(0.5, 0.5);
+		return;
+	}
+
+	float s = 0.5 * (cos(DR * 360 / div * mult));
+	float t = 0.5 * (sin(DR * 360 / div * mult));
+	glTexCoord2d(s, t);
+}
+
 void GLT(int x)
 {
 	static int count = 0;
@@ -282,7 +295,7 @@ int main()
 	window.setFramerateLimit(60);
 
 	enum prim{ cube, dice, cyl, can };
-	prim mode = cyl;
+	prim mode = can;
 
 	glEnable(GL_TEXTURE_2D);
 	vector<sf::Texture> tex = LoadImages(LoadFilenames());
@@ -298,10 +311,12 @@ int main()
 	GLdouble bbb[] = { -1, -1, -1 };
 	
 	//Cylinder vars
-	float cylrad = 0.5f,
-		cylhei = 1.0,
-		cylver = 16,
-		magic = 0;
+	float cylrad = 0.5,
+		cylhei = 1.5,
+		cylver = 360,
+		magic = 0,
+		tU = 0,
+		t = 0;
 	vector<sf::Vector3f> cylPoi = GetCylinder(cylrad, cylver, cylhei);
 
 	//Enable Back Face Culling
@@ -643,8 +658,7 @@ int main()
 
 				glEnd();
 
-				//Rim
-				
+				//Rim				
 				glColor3f(0, 0, 1);
 				glBegin(GL_QUADS);
 				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
@@ -703,78 +717,120 @@ int main()
 				glPolygonMode(GL_BACK, GL_LINE);
 				glPolygonMode(GL_FRONT, GL_FILL);
 				r += 2;
-				glRotated(r / 2, 1, 0, 0);
+				glRotated(-10, 1, 0, 0);
 				glRotated(r, 0, 1, 0);
 				glScaled(0.5, 0.5, 0.5);
 
 				magic = (cylPoi.size() - 2) / 2;
+				t = 0;
+				tU = 1 / magic;
 
 				//Top
-				glColor3f(0, 1, 0);
+				t = 0;
+				sf::Texture::bind(&tex.at(10));
 				glBegin(GL_TRIANGLES);
 				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
 				{
 					if (vIter != vLast)
 					{
+						GLTex(0, 0);
 						GL(*vStart);
+
+						GLTex(magic, t);
 						GL(*vIter);
+
+						GLTex(magic, t + 1);
 						GL(*(vIter + 1));
 					}
 
 					else
 					{
+						GLTex(0, 0);
 						GL(*vStart);
+
+						GLTex(magic, t);
 						GL(*vIter);
+
+						GLTex(magic, t + 1);
 						GL(*++vStart);
 					}
+					t++;
 				}
 
 				glEnd();
 
 				//Rim
-
-				glColor3f(0, 0, 1);
+				t = 0;
+				sf::Texture::bind(&tex.at(11));
 				glBegin(GL_QUADS);
 				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin(), vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
 				{
 					if (vIter != vLast)
 					{
+						glTexCoord2d(t * tU, 0);
 						GL(*vIter);
+
+						glTexCoord2d(t * tU, 1);
 						GL(*(vIter + magic));
+
+						glTexCoord2d(t * tU, 1);
 						GL(*(vIter + magic + 1));
+
+						glTexCoord2d(t * tU, 0);
 						GL(*(vIter + 1));
 					}
 
 					else
 					{
+						glTexCoord2d(t * tU, 0);
 						GL(*vIter);
+
+						glTexCoord2d(t * tU, 1);
 						GL(*(vIter + magic));
+
+						glTexCoord2d(t * tU, 1);
 						GL(*(vIter + 1));
+
+						glTexCoord2d(t * tU, 0);
 						GL(*(vStart + 1));
 					}
 
+					t++;
 				}
 				glEnd();
 
 
 				//Bottom
-				glColor3f(1, 0, 0);
+				t = 0;
+				sf::Texture::bind(&tex.at(12));
 				glBegin(GL_TRIANGLES);
 				for (vector<sf::Vector3f>::iterator vStart = cylPoi.begin() + magic, vIter = vStart + 1, vLast = vStart + magic, vEnd = vLast + 1; vIter != vEnd; ++vIter)
 				{
 					if (vIter != vLast)
 					{
+						GLTex(0, 0);
 						GL(*vEnd);
+
+						GLTex(magic, t);
 						GL(*++vIter);
+
+						GLTex(magic, t + 1);
 						GL(*--vIter);
 					}
 
 					else
 					{
+						GLTex(0, 0);
 						GL(*vEnd);
+
+						GLTex(magic, t);
 						GL(*++vStart);
+
+						GLTex(magic, t + 1);
 						GL(*vIter);
 					}
+
+					t++;
 				}
 				glEnd();
 
